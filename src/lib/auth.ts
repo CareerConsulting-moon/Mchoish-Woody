@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
+import { isPrismaRuntimeDbError } from "@/lib/prisma-errors";
 
 export { hashPassword, verifyPassword };
 
@@ -18,9 +19,16 @@ export async function createSession(userId: string): Promise<void> {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + SESSION_TTL_DAYS);
 
-  await prisma.session.create({
-    data: { token, userId, expiresAt },
-  });
+  try {
+    await prisma.session.create({
+      data: { token, userId, expiresAt },
+    });
+  } catch (error) {
+    if (isPrismaRuntimeDbError(error)) {
+      throw new Error("배포 환경 데이터베이스가 아직 준비되지 않았습니다.");
+    }
+    throw error;
+  }
 
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
@@ -36,7 +44,13 @@ export async function clearSession(): Promise<void> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (token) {
-    await prisma.session.deleteMany({ where: { token } });
+    try {
+      await prisma.session.deleteMany({ where: { token } });
+    } catch (error) {
+      if (!isPrismaRuntimeDbError(error)) {
+        throw error;
+      }
+    }
   }
   cookieStore.delete(SESSION_COOKIE);
 }
@@ -48,10 +62,19 @@ export async function getCurrentUser() {
     return null;
   }
 
-  const session = await prisma.session.findUnique({
-    where: { token },
-    include: { user: true },
-  });
+  let session = null;
+  try {
+    session = await prisma.session.findUnique({
+      where: { token },
+      include: { user: true },
+    });
+  } catch (error) {
+    if (isPrismaRuntimeDbError(error)) {
+      cookieStore.delete(SESSION_COOKIE);
+      return null;
+    }
+    throw error;
+  }
 
   if (!session || session.expiresAt <= new Date()) {
     cookieStore.delete(SESSION_COOKIE);

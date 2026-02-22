@@ -2,12 +2,23 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatKoDate } from "@/lib/date";
 import { projectCategoryLabels } from "@/lib/constants";
+import { isPrismaRuntimeDbError } from "@/lib/prisma-errors";
 
 export default async function PublicProjectsPage() {
-  const projects = await prisma.project.findMany({
-    where: { visibility: "PUBLIC" },
-    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
-  });
+  let projects: Awaited<ReturnType<typeof prisma.project.findMany>> = [];
+  let dbUnavailable = false;
+  try {
+    projects = await prisma.project.findMany({
+      where: { visibility: "PUBLIC" },
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+    });
+  } catch (error) {
+    if (isPrismaRuntimeDbError(error)) {
+      dbUnavailable = true;
+    } else {
+      throw error;
+    }
+  }
 
   return (
     <section className="rounded-xl border bg-white p-6">
@@ -32,6 +43,11 @@ export default async function PublicProjectsPage() {
             </div>
           </Link>
         ))}
+        {dbUnavailable && (
+          <p className="text-sm text-amber-700">
+            배포 환경 데이터베이스가 아직 준비되지 않아 공개 실적 목록을 불러오지 못했습니다.
+          </p>
+        )}
         {projects.length === 0 && <p className="text-sm text-zinc-500">아직 공개된 프로젝트가 없습니다.</p>}
       </div>
     </section>

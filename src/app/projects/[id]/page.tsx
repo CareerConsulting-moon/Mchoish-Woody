@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { formatKoDate } from "@/lib/date";
 import { parseJsonArray } from "@/lib/utils";
 import { projectCategoryLabels } from "@/lib/constants";
+import { isPrismaRuntimeDbError } from "@/lib/prisma-errors";
 
 interface ProjectDetailProps {
   params: Promise<{ id: string }>;
@@ -11,20 +12,35 @@ interface ProjectDetailProps {
 
 export default async function ProjectDetailPage({ params }: ProjectDetailProps) {
   const { id } = await params;
-  const project = await prisma.project.findFirst({
-    where: { id, visibility: "PUBLIC" },
-    include: {
-      artifacts: {
-        include: {
-          artifact: {
-            include: {
-              attachments: true,
+  let project = null;
+  try {
+    project = await prisma.project.findFirst({
+      where: { id, visibility: "PUBLIC" },
+      include: {
+        artifacts: {
+          include: {
+            artifact: {
+              include: {
+                attachments: true,
+              },
             },
           },
         },
       },
-    },
-  });
+    });
+  } catch (error) {
+    if (isPrismaRuntimeDbError(error)) {
+      return (
+        <section className="rounded-xl border bg-white p-6">
+          <h1 className="text-xl font-bold">실적 상세</h1>
+          <p className="mt-2 text-sm text-amber-700">
+            배포 환경 데이터베이스가 아직 준비되지 않아 실적 상세를 불러올 수 없습니다.
+          </p>
+        </section>
+      );
+    }
+    throw error;
+  }
 
   if (!project) {
     notFound();
