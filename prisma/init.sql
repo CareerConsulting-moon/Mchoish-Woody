@@ -94,8 +94,14 @@ CREATE TABLE "ArtifactAttachment" (
 CREATE TABLE "Project" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "ownerId" TEXT NOT NULL,
+    "category" TEXT NOT NULL DEFAULT 'OTHER',
+    "topic" TEXT,
     "title" TEXT NOT NULL,
     "description" TEXT NOT NULL,
+    "imageUrl" TEXT,
+    "workDate" DATETIME,
+    "publishedAt" DATETIME,
+    "snsPromoText" TEXT NOT NULL DEFAULT '',
     "role" TEXT NOT NULL,
     "periodStart" DATETIME,
     "periodEnd" DATETIME,
@@ -181,4 +187,10 @@ CREATE INDEX "Project_ownerId_idx" ON "Project"("ownerId");
 
 -- CreateIndex
 CREATE INDEX "Project_visibility_idx" ON "Project"("visibility");
+
+-- CreateIndex
+CREATE INDEX "Project_category_idx" ON "Project"("category");
+
+-- CreateIndex
+CREATE INDEX "Project_publishedAt_idx" ON "Project"("publishedAt");
 

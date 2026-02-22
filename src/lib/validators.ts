@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ARTIFACT_TYPES, MILESTONE_STATUSES, VISIBILITIES } from "@/lib/constants";
+import { ARTIFACT_TYPES, MILESTONE_STATUSES, PROJECT_CATEGORIES, VISIBILITIES } from "@/lib/constants";
 
 export const loginSchema = z.object({
   email: z.email("이메일 형식이 올바르지 않습니다."),
@@ -53,8 +53,14 @@ export const artifactSchema = z.object({
 });
 
 export const projectSchema = z.object({
+  category: z.enum(PROJECT_CATEGORIES),
+  topic: z.string().min(2).max(120),
   title: z.string().min(2).max(120),
   description: z.string().min(2).max(2000),
+  imageUrl: z.url("이미지 URL 형식이 올바르지 않습니다.").optional().or(z.literal("")),
+  workDate: z.string().min(1),
+  publishedAt: z.string().min(1),
+  snsPromoText: z.string().max(3000).default(""),
   role: z.string().min(2).max(120),
   periodStart: z.string().optional(),
   periodEnd: z.string().optional(),

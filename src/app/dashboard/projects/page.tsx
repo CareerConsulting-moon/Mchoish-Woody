@@ -3,7 +3,9 @@ import { requireUser } from "@/lib/auth";
 import { formatKoDate } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
 import { parseJsonArray } from "@/lib/utils";
+import { projectCategoryLabels } from "@/lib/constants";
 import { createProjectAction, deleteProjectAction, updateProjectAction } from "./actions";
+import { ProjectSnsHelperFields } from "@/components/project-sns-helper-fields";
 
 export default async function ProjectsDashboardPage() {
   const user = await requireUser();
@@ -23,11 +25,12 @@ export default async function ProjectsDashboardPage() {
     <div className="space-y-6">
       <section className="rounded-xl border bg-white p-5">
         <h1 className="text-xl font-bold">프로젝트 관리</h1>
-        <p className="text-sm text-zinc-600">프로젝트와 연결된 증빙을 함께 보여주세요.</p>
+        <p className="text-sm text-zinc-600">실적 게시글을 카테고리별로 관리하고 SNS 홍보문까지 저장하세요.</p>
 
-        <form action={createProjectAction} className="mt-4 grid gap-3 md:grid-cols-3">
+        <form action={createProjectAction} className="mt-4 grid gap-3 md:grid-cols-3" encType="multipart/form-data">
+          <ProjectSnsHelperFields />
           <label className="text-sm md:col-span-2">
-            제목
+            프로젝트명
             <input name="title" required className="mt-1 w-full" />
           </label>
           <label className="text-sm">
@@ -84,16 +87,27 @@ export default async function ProjectsDashboardPage() {
       <section className="space-y-4">
         {projects.map((project) => (
           <article key={project.id} className="rounded-xl border bg-white p-5">
-            <form action={updateProjectAction} className="grid gap-3 md:grid-cols-3">
+            <form action={updateProjectAction} className="grid gap-3 md:grid-cols-3" encType="multipart/form-data">
               <input type="hidden" name="id" value={project.id} />
               <label className="text-sm md:col-span-2">
-                제목
+                프로젝트명
                 <input name="title" defaultValue={project.title} className="mt-1 w-full" />
               </label>
               <label className="text-sm">
                 역할
                 <input name="role" defaultValue={project.role} className="mt-1 w-full" />
               </label>
+              <ProjectSnsHelperFields
+                defaults={{
+                  category: project.category,
+                  topic: project.topic ?? project.title,
+                  imageUrl: project.imageUrl ?? "",
+                  workDate: project.workDate ? new Date(project.workDate).toISOString().slice(0, 10) : "",
+                  publishedAt:
+                    project.publishedAt ? new Date(project.publishedAt).toISOString().slice(0, 10) : new Date(project.createdAt).toISOString().slice(0, 10),
+                  snsPromoText: project.snsPromoText ?? "",
+                }}
+              />
               <label className="text-sm md:col-span-3">
                 설명
                 <textarea name="description" defaultValue={project.description} className="mt-1 h-24 w-full" />
@@ -162,7 +176,12 @@ export default async function ProjectsDashboardPage() {
                 )}
               </div>
             </form>
-            <p className="mt-2 text-xs text-zinc-500">생성일 {formatKoDate(project.createdAt)}</p>
+            <div className="mt-2 flex flex-wrap gap-3 text-xs text-zinc-500">
+              <p>카테고리 {projectCategoryLabels[(project.category as keyof typeof projectCategoryLabels) ?? "OTHER"] ?? "기타"}</p>
+              <p>생성일 {formatKoDate(project.createdAt)}</p>
+              {project.workDate ? <p>작업일 {formatKoDate(project.workDate)}</p> : null}
+              {project.publishedAt ? <p>게시일 {formatKoDate(project.publishedAt)}</p> : null}
+            </div>
           </article>
         ))}
         {projects.length === 0 && <p className="text-sm text-zinc-500">프로젝트를 먼저 생성하세요.</p>}

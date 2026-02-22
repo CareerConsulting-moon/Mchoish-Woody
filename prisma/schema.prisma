@@ -125,8 +125,14 @@ model ArtifactAttachment {
 model Project {
   id          String            @id @default(cuid())
   ownerId     String
+  category    String            @default("OTHER")
+  topic       String?
   title       String
   description String
+  imageUrl     String?
+  workDate     DateTime?
+  publishedAt  DateTime?
+  snsPromoText String           @default("")
   role        String
   periodStart DateTime?
   periodEnd   DateTime?
@@ -140,6 +146,8 @@ model Project {
 
   @@index([ownerId])
   @@index([visibility])
+  @@index([category])
+  @@index([publishedAt])
 }
 
 model ProjectArtifact {
