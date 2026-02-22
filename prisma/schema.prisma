@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  createdAt    DateTime    @default(now())
+  roadmaps     Roadmap[]
+  dailyPlans   DailyPlan[]
+  artifacts    Artifact[]
+  projects     Project[]
+  sessions     Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Roadmap {
+  id             String      @id @default(cuid())
+  ownerId        String
+  title          String
+  targetRole     String
+  targetIndustry String
+  createdAt      DateTime    @default(now())
+  owner          User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  milestones     Milestone[]
+
+  @@index([ownerId])
+}
+
+model Milestone {
+  id             String              @id @default(cuid())
+  roadmapId      String
+  title          String
+  description    String
+  dueDate        DateTime?
+  status         String              @default("TODO")
+  order          Int
+  competencyTags String              @default("[]")
+  createdAt      DateTime            @default(now())
+  roadmap        Roadmap             @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  artifactLinks  ArtifactMilestone[]
+
+  @@index([roadmapId])
+}
+
+model DailyPlan {
+  id         String      @id @default(cuid())
+  ownerId    String
+  date       DateTime
+  reflection String      @default("")
+  mood       Int?
+  owner      User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  goals      DailyGoal[]
+
+  @@unique([ownerId, date])
+  @@index([ownerId])
+}
+
+model DailyGoal {
+  id            String              @id @default(cuid())
+  dailyPlanId   String
+  title         String
+  category      String?
+  isDone        Boolean             @default(false)
+  doneAt        DateTime?
+  createdAt     DateTime            @default(now())
+  dailyPlan     DailyPlan           @relation(fields: [dailyPlanId], references: [id], onDelete: Cascade)
+  artifactLinks ArtifactDailyGoal[]
+
+  @@index([dailyPlanId])
+}
+
+model Artifact {
+  id             String               @id @default(cuid())
+  ownerId        String
+  type           String
+  title          String
+  summary        String
+  contentMd      String
+  date           DateTime
+  tags           String               @default("[]")
+  linkUrl        String?
+  visibility     String               @default("PRIVATE")
+  createdAt      DateTime             @default(now())
+  owner          User                 @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  attachments    ArtifactAttachment[]
+  milestoneLinks ArtifactMilestone[]
+  dailyGoalLinks ArtifactDailyGoal[]
+  projectLinks   ProjectArtifact[]
+
+  @@index([ownerId])
+  @@index([visibility])
+  @@index([date])
+}
+
+model ArtifactAttachment {
+  id         String         @id @default(cuid())
+  artifactId String
+  kind       String @default("IMAGE")
+  pathOrUrl  String
+  mimeType   String
+  size       Int
+  artifact   Artifact       @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+
+  @@index([artifactId])
+}
+
+model Project {
+  id          String            @id @default(cuid())
+  ownerId     String
+  title       String
+  description String
+  role        String
+  periodStart DateTime?
+  periodEnd   DateTime?
+  techStack   String            @default("[]")
+  repoUrl     String?
+  demoUrl     String?
+  visibility  String            @default("PRIVATE")
+  createdAt   DateTime          @default(now())
+  owner       User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  artifacts   ProjectArtifact[]
+
+  @@index([ownerId])
+  @@index([visibility])
+}
+
+model ProjectArtifact {
+  projectId  String
+  artifactId String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  artifact   Artifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, artifactId])
+}
+
+model ArtifactMilestone {
+  artifactId  String
+  milestoneId String
+  artifact    Artifact  @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+  milestone   Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+
+  @@id([artifactId, milestoneId])
+}
+
+model ArtifactDailyGoal {
+  artifactId  String
+  dailyGoalId String
+  artifact    Artifact  @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+  dailyGoal   DailyGoal @relation(fields: [dailyGoalId], references: [id], onDelete: Cascade)
+
+  @@id([artifactId, dailyGoalId])
+}

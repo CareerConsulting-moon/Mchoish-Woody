@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #111827;
+  --wood-primary: #2e4a3e;
+  --wood-secondary: #8b6914;
+  --wood-background: #f5f0e8;
+  --wood-accent: #d4a84b;
+  --wood-white: #fefdfb;
+  --wood-text: #1a1a1a;
+  --wood-body: #4a4a4a;
+  --wood-muted: #e8e3db;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+  color: var(--foreground);
+}
+
+input,
+textarea,
+select {
+  @apply rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm;
+}
+
+button {
+  @apply rounded-md bg-zinc-900 px-3 py-2 text-sm text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+a {
+  @apply text-zinc-800 hover:text-zinc-950;
+}
+
+.font-woody-serif {
+  font-family: var(--font-noto-serif-kr), serif;
+  letter-spacing: -0.02em;
+}
+
+.font-woody-sans {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+}
+
+.wood-grain {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.02)),
+    linear-gradient(90deg, rgba(46, 74, 62, 0.02) 0%, rgba(46, 74, 62, 0) 30%, rgba(46, 74, 62, 0.02) 60%, rgba(46, 74, 62, 0) 100%),
+    repeating-linear-gradient(
+      8deg,
+      rgba(139, 105, 20, 0.03) 0,
+      rgba(139, 105, 20, 0.03) 2px,
+      transparent 2px,
+      transparent 12px
+    );
+}
+
+body:has(#woody-home) {
+  background: var(--wood-background);
+  color: var(--wood-text);
+}
+
+body:has(#woody-home) > header {
+  display: none;
+}
+
+body:has(#woody-home) > main {
+  margin: 0;
+  min-height: 100vh;
+  max-width: none;
+  padding: 0;
+}
+
+body:has(#woody-home) a {
+  color: inherit;
+}
